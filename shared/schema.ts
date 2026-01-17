@@ -36,7 +36,7 @@ export const roadmapItems = pgTable("roadmap_items", {
   analysisId: integer("analysis_id").notNull().references(() => analysisResults.id),
   title: text("title").notNull(),
   description: text("description").notNull(),
-  category: text("category").notNull(), // 'skill', 'project', 'practice'
+  category: text("category").notNull(), // 'skill', 'project', 'practice', 'interview'
   status: text("status").notNull().default("pending"), // 'pending', 'in_progress', 'completed'
   order: integer("order").notNull(),
   createdAt: timestamp("created_at").defaultNow(),

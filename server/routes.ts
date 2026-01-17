@@ -52,13 +52,14 @@ export async function registerRoutes(
             {
               "title": string,
               "description": string,
-              "category": "skill" | "project" | "practice",
+              "category": "skill" | "project" | "practice" | "interview",
               "order": number (1-based index)
             }
           ]
         }
         
-        The roadmap should contain 4-6 actionable steps sorted by priority (order).
+        The roadmap should contain 6-8 actionable steps sorted by priority (order). 
+        Include at least 2 "interview" category items focused on specific behavioral or technical questions relevant to the role.
       `;
 
       const response = await openai.chat.completions.create({
@@ -160,6 +161,52 @@ export async function registerRoutes(
       res.status(500).json({ message: "Internal server error" });
     }
   });
+
+  // Seed data function
+  async function seedDatabase() {
+    const existing = await storage.getResume(1);
+    if (!existing) {
+      const resume = await storage.createResume({
+        content: "Experience: 5 years in React development. Skills: TypeScript, Node.js, AWS.",
+        targetRole: "Senior Frontend Engineer",
+        fileName: "example_resume.pdf",
+      });
+      const analysis = await storage.createAnalysisResult({
+        resumeId: resume.id,
+        readinessScore: 85,
+        strengths: ["Strong React background", "Cloud experience", "TypeScript proficiency"],
+        gaps: ["Testing frameworks", "System design basics"],
+      });
+      await storage.createRoadmapItems([
+        {
+          analysisId: analysis.id,
+          title: "Master Vitest",
+          description: "Learn how to write unit tests for React components.",
+          category: "skill",
+          order: 1,
+          status: "pending",
+        },
+        {
+          analysisId: analysis.id,
+          title: "Build a Scalable Architecture",
+          description: "Practice building a multi-service app on AWS.",
+          category: "project",
+          order: 2,
+          status: "pending",
+        },
+        {
+          analysisId: analysis.id,
+          title: "Behavioral Mock Interview",
+          description: "Practice STAR method for leadership questions.",
+          category: "interview",
+          order: 3,
+          status: "pending",
+        }
+      ]);
+    }
+  }
+
+  seedDatabase().catch(console.error);
 
   return httpServer;
 }
