@@ -168,4 +168,177 @@ export class DatabaseStorage implements IStorage {
 }
 
 // Strictly persistent storage for Career-Navigator Production-Ready Environment
-export const storage = new DatabaseStorage();
+export class MemStorage implements IStorage {
+  private users: Map<number, User>;
+  private resumes: Map<number, Resume>;
+  private analysisResults: Map<number, AnalysisResult>;
+  private roadmapItems: Map<number, RoadmapItem>;
+  private interviews: Map<number, Interview>;
+  private interviewMessages: Map<number, InterviewMessage>;
+  private portfolios: Map<number, Portfolio>;
+  private currentId: { [key: string]: number };
+
+  constructor() {
+    this.users = new Map();
+    this.resumes = new Map();
+    this.analysisResults = new Map();
+    this.roadmapItems = new Map();
+    this.interviews = new Map();
+    this.interviewMessages = new Map();
+    this.portfolios = new Map();
+    this.currentId = {
+      users: 1,
+      resumes: 1,
+      analysisResults: 1,
+      roadmapItems: 1,
+      interviews: 1,
+      interviewMessages: 1,
+      portfolios: 1,
+    };
+  }
+
+  async getUser(id: number): Promise<User | undefined> {
+    return this.users.get(id);
+  }
+
+  async getUserByUsername(username: string): Promise<User | undefined> {
+    return Array.from(this.users.values()).find(
+      (user) => user.username === username,
+    );
+  }
+
+  async createUser(insertUser: InsertUser): Promise<User> {
+    const id = this.currentId.users++;
+    const user: User = { ...insertUser, id };
+    this.users.set(id, user);
+    return user;
+  }
+
+  async createResume(resume: InsertResume): Promise<Resume> {
+    const id = this.currentId.resumes++;
+    const newResume: Resume = {
+      ...resume,
+      id,
+      createdAt: new Date(),
+      userId: resume.userId || null
+    };
+    this.resumes.set(id, newResume);
+    return newResume;
+  }
+
+  async getResume(id: number): Promise<Resume | undefined> {
+    return this.resumes.get(id);
+  }
+
+  async getLatestResume(): Promise<Resume | undefined> {
+    return Array.from(this.resumes.values())
+      .sort((a, b) => (b.createdAt?.getTime() ?? 0) - (a.createdAt?.getTime() ?? 0))[0];
+  }
+
+  async createAnalysisResult(analysis: InsertAnalysisResult): Promise<AnalysisResult> {
+    const id = this.currentId.analysisResults++;
+    const newAnalysis: AnalysisResult = {
+      ...analysis,
+      id,
+      createdAt: new Date(),
+      resumeQuality: analysis.resumeQuality ?? null,
+      skillMatch: analysis.skillMatch ?? null,
+      projectStrength: analysis.projectStrength ?? null,
+      interviewReadiness: analysis.interviewReadiness ?? null,
+      feedback: analysis.feedback ?? null,
+      analysisData: analysis.analysisData ?? {}
+    };
+    this.analysisResults.set(id, newAnalysis);
+    return newAnalysis;
+  }
+
+  async getAnalysisResultByResumeId(resumeId: number): Promise<AnalysisResult | undefined> {
+    return Array.from(this.analysisResults.values()).find(
+      (a) => a.resumeId === resumeId,
+    );
+  }
+
+  async createRoadmapItems(items: InsertRoadmapItem[]): Promise<RoadmapItem[]> {
+    return items.map((item) => {
+      const id = this.currentId.roadmapItems++;
+      const newItem: RoadmapItem = {
+        ...item,
+        id,
+        status: item.status ?? "pending",
+        createdAt: new Date()
+      };
+      this.roadmapItems.set(id, newItem);
+      return newItem;
+    });
+  }
+
+  async getRoadmapItemsByAnalysisId(analysisId: number): Promise<RoadmapItem[]> {
+    return Array.from(this.roadmapItems.values())
+      .filter((item) => item.analysisId === analysisId)
+      .sort((a, b) => a.order - b.order);
+  }
+
+  async updateRoadmapItemStatus(id: number, status: string): Promise<RoadmapItem | undefined> {
+    const item = this.roadmapItems.get(id);
+    if (!item) return undefined;
+    const updatedItem = { ...item, status };
+    this.roadmapItems.set(id, updatedItem);
+    return updatedItem;
+  }
+
+  async createInterview(interview: InsertInterview): Promise<Interview> {
+    const id = this.currentId.interviews++;
+    const newInterview: Interview = {
+      ...interview,
+      id,
+      createdAt: new Date(),
+      score: interview.score ?? null,
+      feedback: interview.feedback ?? null
+    };
+    this.interviews.set(id, newInterview);
+    return newInterview;
+  }
+
+  async getInterview(id: number): Promise<Interview | undefined> {
+    return this.interviews.get(id);
+  }
+
+  async createInterviewMessage(message: InsertInterviewMessage): Promise<InterviewMessage> {
+    const id = this.currentId.interviewMessages++;
+    const newMessage: InterviewMessage = { ...message, id, createdAt: new Date() };
+    this.interviewMessages.set(id, newMessage);
+    return newMessage;
+  }
+
+  async getInterviewMessages(interviewId: number): Promise<InterviewMessage[]> {
+    return Array.from(this.interviewMessages.values())
+      .filter((m) => m.interviewId === interviewId)
+      .sort((a, b) => (a.createdAt?.getTime() ?? 0) - (b.createdAt?.getTime() ?? 0));
+  }
+
+  async createPortfolio(portfolio: InsertPortfolio): Promise<Portfolio> {
+    const id = this.currentId.portfolios++;
+    const newPortfolio: Portfolio = {
+      ...portfolio,
+      id,
+      createdAt: new Date(),
+      bio: portfolio.bio ?? null,
+      theme: portfolio.theme ?? null,
+      isPublic: portfolio.isPublic ?? null,
+      projects: portfolio.projects ?? []
+    };
+    this.portfolios.set(id, newPortfolio);
+    return newPortfolio;
+  }
+
+  async getPortfolioByUserId(userId: number): Promise<Portfolio | undefined> {
+    return Array.from(this.portfolios.values()).find(
+      (p) => p.userId === userId,
+    );
+  }
+}
+
+// Strictly persistent storage for Career-Navigator Production-Ready Environment
+// export const storage = new DatabaseStorage();
+// Fallback to MemStorage as the database connection is currently unreliable
+export const storage = new MemStorage();

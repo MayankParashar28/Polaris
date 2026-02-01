@@ -24,13 +24,7 @@ async function generateContentWithFallback(prompt: string, jsonMode = true, inli
   if (clients.length === 0) throw new Error("No Gemini API Keys found");
 
   const models = [
-    "gemini-2.5-flash",
-    "gemini-2.0-flash",
-    "gemini-1.5-flash",
-    "gemini-1.5-flash-latest",
-    "gemini-1.5-pro",
-    "gemini-1.0-pro",
-    "gemini-pro"
+    "gemini-2.5-flash"
   ];
 
   const errors: any[] = [];
