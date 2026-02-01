@@ -1,6 +1,6 @@
 
 import { useState } from "react";
-import { useLocation } from "wouter";
+import { useLocation, Link } from "wouter";
 import { useAnalyzeResume } from "@/hooks/use-resumes";
 import { useAuth } from "@/hooks/use-auth";
 import { useMutation } from "@tanstack/react-query";
@@ -225,10 +225,16 @@ export default function Home() {
 
           <div className="h-4 w-[1px] bg-slate-200 hidden sm:block" />
 
-          {user && (
+          {user ? (
             <Button variant="ghost" className="text-slate-600 hover:text-primary hover:bg-primary/5 rounded-full px-4 h-8 text-sm" onClick={() => logoutMutation.mutate()}>
               <LogOut className="w-3 h-3 mr-2" /> Logout
             </Button>
+          ) : (
+            <Link href="/auth">
+              <Button variant="ghost" className="text-slate-600 hover:text-primary hover:bg-primary/5 rounded-full px-4 h-8 text-sm">
+                Login
+              </Button>
+            </Link>
           )}
         </div>
       </nav>

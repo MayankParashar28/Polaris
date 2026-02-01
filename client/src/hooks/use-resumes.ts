@@ -44,6 +44,7 @@ export function useResumeAnalysis(id: number | "latest") {
       return api.resumes.getAnalysis.responses[200].parse(await res.json());
     },
     enabled: !!id,
+    refetchInterval: 5000, // Poll every 5 seconds for real-time updates
   });
 }
 

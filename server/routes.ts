@@ -506,6 +506,46 @@ export async function registerRoutes(
     }
   });
 
+
+  // ==========================================
+  // APPLICATION TRACKER ROUTES
+  // ==========================================
+
+  app.post("/api/applications", async (req, res) => {
+    try {
+      const { userId, role, company, status, notes } = req.body; // In real app, validate with Zod
+      if (!userId || !role || !company) {
+        return res.status(400).json({ message: "Missing required fields" });
+      }
+
+      const application = await storage.createApplication({
+        userId,
+        role,
+        company,
+        status: status || "Applied",
+        notes: notes || "",
+      });
+
+      res.status(201).json(application);
+    } catch (err) {
+      console.error("Create application error:", err);
+      res.status(500).json({ message: "Failed to create application" });
+    }
+  });
+
+  app.get("/api/applications", async (req, res) => {
+    try {
+      // For demo, we might need to pass userId in query if auth is not fully active
+      // or assume a default user if none provided.
+      const userId = Number(req.query.userId) || 1;
+      const applications = await storage.getApplications(userId);
+      res.json(applications);
+    } catch (err) {
+      console.error("Get applications error:", err);
+      res.status(500).json({ message: "Failed to get applications" });
+    }
+  });
+
   // Seed data function
   async function seedDatabase() {
     const existingUser = await storage.getUserByUsername("demo");
@@ -561,6 +601,11 @@ export async function registerRoutes(
           status: "pending",
         }
       ]);
+
+      // Seed Applications using the storage method
+      await storage.createApplication({ userId: userId, role: "Senior Frontend Engineer", company: "TechCorp", status: "Interview", notes: "Final round pending" });
+      await storage.createApplication({ userId: userId, role: "Full Stack Developer", company: "StartUp Inc", status: "Applied", notes: "Referral from Jim" });
+      await storage.createApplication({ userId: userId, role: "React Native Lead", company: "MobileFirst", status: "Rejected", notes: "Salary mismatch" });
     }
   }
 

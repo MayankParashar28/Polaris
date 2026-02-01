@@ -28,45 +28,47 @@ function Router() {
       </Route>
 
       {/* Protected Routes Wrapped in Layout */}
-      <Route path="/dashboard/:id">
-        {(params) => (
-          <Layout>
-            <Dashboard />
-          </Layout>
-        )}
-      </Route>
-      <Route path="/interview/:id">
-        {(params) => (
-          <Layout>
-            <InterviewPage />
-          </Layout>
-        )}
-      </Route>
-      <Route path="/resume/:id">
+      <ProtectedRoute path="/dashboard/:id" component={(params: any) => (
+        <Layout>
+          <Dashboard {...params} />
+        </Layout>
+      )} />
+
+      <ProtectedRoute path="/interview/:id" component={(params: any) => (
+        <Layout>
+          <InterviewPage {...params} />
+        </Layout>
+      )} />
+
+      <ProtectedRoute path="/resume/:id" component={() => (
         <Layout>
           <ResumePreview />
         </Layout>
-      </Route>
-      <Route path="/portfolio">
+      )} />
+
+      <ProtectedRoute path="/portfolio" component={() => (
         <Layout>
           <PortfolioBuilder />
         </Layout>
-      </Route>
-      <Route path="/market">
+      )} />
+
+      <ProtectedRoute path="/market" component={() => (
         <Layout>
           <MarketPulse />
         </Layout>
-      </Route>
-      <Route path="/recommendations">
+      )} />
+
+      <ProtectedRoute path="/recommendations" component={() => (
         <Layout>
           <Recommendations />
         </Layout>
-      </Route>
-      <Route path="/quest">
+      )} />
+
+      <ProtectedRoute path="/quest" component={() => (
         <Layout>
           <CareerQuest />
         </Layout>
-      </Route>
+      )} />
 
       <Route component={NotFound} />
     </Switch>

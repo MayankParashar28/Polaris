@@ -15,6 +15,7 @@ export default defineConfig({
     },
   },
   root: path.resolve(import.meta.dirname, "client"),
+  envDir: "..", // Vite looks for .env in root by default, but since root is set to client, we need to point back up
   build: {
     outDir: path.resolve(import.meta.dirname, "dist/public"),
     emptyOutDir: true,

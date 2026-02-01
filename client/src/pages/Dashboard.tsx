@@ -1,6 +1,6 @@
 import React from "react";
 import { useParams, Link, useLocation } from "wouter";
-import { useMutation } from "@tanstack/react-query";
+import { useMutation, useQuery } from "@tanstack/react-query";
 import { api } from "@shared/routes";
 import { useResumeAnalysis } from "@/hooks/use-resumes";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
@@ -28,6 +28,41 @@ import { PrintableResume } from "@/components/PrintableResume";
 import { JobRecommendations } from "@/components/JobRecommendations";
 import { Gauge } from "@/components/Gauge";
 import { SkillsRadarChart } from "@/components/ui/radar-chart";
+
+// Helper functions for dynamic calculations
+function calculateJourneyProgress(roadmap: any[]): number {
+  if (!roadmap || roadmap.length === 0) return 0;
+  const completedItems = roadmap.filter(item => item.status === 'completed').length;
+  return Math.round((completedItems / roadmap.length) * 100);
+}
+
+function getPercentileLabel(score: number): string {
+  if (score >= 90) return "Top 5% of candidates";
+  if (score >= 80) return "Top 10% of candidates";
+  if (score >= 70) return "Top 25% of candidates";
+  if (score >= 60) return "Above average";
+  return "Room for improvement";
+}
+
+function getATSStatusLabel(score: number): string {
+  if (score >= 85) return "Highly Optimized";
+  if (score >= 70) return "System Readable";
+  return "Needs Optimization";
+}
+
+function getCurrentStage(progress: number): string {
+  if (progress < 26) return "Analyze";
+  if (progress < 51) return "Optimize";
+  if (progress < 76) return "Apply";
+  return "Interview";
+}
+
+function getStageStatus(stageName: string, currentStage: string): boolean {
+  const stages = ["Analyze", "Optimize", "Apply", "Interview"];
+  const currentIndex = stages.indexOf(currentStage);
+  const stageIndex = stages.indexOf(stageName);
+  return stageIndex <= currentIndex;
+}
 
 export default function Dashboard() {
   const params = useParams();
@@ -65,6 +100,12 @@ export default function Dashboard() {
     ...analysis.gaps.slice(0, 3).map((g: string) => ({ subject: g.split(' ').slice(0, 2).join(' '), A: 50, fullMark: 100 })),
   ];
 
+  // Dynamic calculations
+  const journeyProgress = calculateJourneyProgress(analysis.roadmap);
+  const currentStage = getCurrentStage(journeyProgress);
+  const percentileLabel = getPercentileLabel(analysis.readinessScore);
+  const atsStatusLabel = getATSStatusLabel(analysis.atsScore);
+
   return (
     <div className="min-h-screen bg-slate-50/50 pb-20">
       {/* Hidden PDF Render */}
@@ -98,16 +139,16 @@ export default function Dashboard() {
 
             <div className="flex-1 max-w-2xl flex flex-col justify-end">
               <div className="flex justify-between text-xs font-bold uppercase tracking-wider text-slate-400 mb-3 px-2">
-                <span className="text-indigo-600">Analyze</span>
-                <span className="text-indigo-600">Optimize</span>
-                <span>Apply</span>
-                <span>Interview</span>
+                <span className={getStageStatus("Analyze", currentStage) ? "text-indigo-600" : ""}>Analyze</span>
+                <span className={getStageStatus("Optimize", currentStage) ? "text-indigo-600" : ""}>Optimize</span>
+                <span className={getStageStatus("Apply", currentStage) ? "text-indigo-600" : ""}>Apply</span>
+                <span className={getStageStatus("Interview", currentStage) ? "text-indigo-600" : ""}>Interview</span>
               </div>
               <div className="h-3 bg-slate-100 rounded-full overflow-hidden relative">
-                {/* Animated Progress Bar */}
+                {/* Animated Progress Bar - DYNAMIC */}
                 <motion.div
                   initial={{ width: "0%" }}
-                  animate={{ width: "45%" }}
+                  animate={{ width: `${journeyProgress}%` }}
                   transition={{ duration: 1.5, ease: "easeOut", delay: 0.2 }}
                   className="absolute top-0 left-0 h-full bg-gradient-to-r from-indigo-500 to-purple-500 rounded-full shadow-[0_0_10px_rgba(99,102,241,0.5)]"
                 />
@@ -146,7 +187,7 @@ export default function Dashboard() {
               <CardContent className="p-6 flex flex-col items-center justify-center pt-8">
                 <Gauge value={analysis.readinessScore} size="lg" label="Match Score" color="hsla(243, 75%, 59%, 1)" />
                 <p className="text-xs text-slate-500 mt-6 font-medium flex items-center gap-2">
-                  <span className="w-2 h-2 rounded-full bg-emerald-500 inline-block" /> Top 10% of candidates
+                  <span className="w-2 h-2 rounded-full bg-emerald-500 inline-block" /> {percentileLabel}
                 </p>
               </CardContent>
             </Card>
@@ -162,7 +203,7 @@ export default function Dashboard() {
               <CardContent className="p-6 flex flex-col items-center justify-center pt-8">
                 <Gauge value={analysis.atsScore} size="lg" label="ATS Compatible" color="hsla(158, 64%, 52%, 1)" />
                 <p className="text-xs text-slate-500 mt-6 font-medium flex items-center gap-2">
-                  <CheckCircle2 className="w-3.5 h-3.5 text-emerald-500" /> System Readable
+                  <CheckCircle2 className="w-3.5 h-3.5 text-emerald-500" /> {atsStatusLabel}
                 </p>
               </CardContent>
             </Card>
@@ -309,59 +350,9 @@ export default function Dashboard() {
 
         </Tabs>
 
-        {/* Application Tracker Placeholder (Resuflex Feature) */}
-        <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-          <Card className="col-span-1 lg:col-span-2 border-none shadow-sm bg-white">
-            <CardHeader className="flex flex-row items-center justify-between pb-2">
-              <CardTitle className="text-lg font-bold text-slate-900">Recent Applications</CardTitle>
-              <Button variant="outline" size="sm" className="h-8 text-xs">View All</Button>
-            </CardHeader>
-            <CardContent>
-              <div className="space-y-4">
-                {[
-                  { role: "Senior Frontend Engineer", company: "TechCorp", status: "Interview", date: "2d ago" },
-                  { role: "Full Stack Developer", company: "StartUp Inc", status: "Applied", date: "5d ago" },
-                  { role: "React Native Lead", company: "MobileFirst", status: "Rejected", date: "1w ago" }
-                ].map((job, i) => (
-                  <div key={i} className="flex items-center justify-between p-3 rounded-lg hover:bg-slate-50 transition-colors border border-transparent hover:border-slate-100 group">
-                    <div className="flex items-center gap-3">
-                      <div className="w-10 h-10 rounded-lg bg-indigo-50 text-indigo-600 flex items-center justify-center font-bold text-lg">
-                        {job.company[0]}
-                      </div>
-                      <div>
-                        <h4 className="font-bold text-slate-900 text-sm">{job.role}</h4>
-                        <p className="text-xs text-slate-500">{job.company}</p>
-                      </div>
-                    </div>
-                    <div className="flex items-center gap-3">
-                      <Badge variant="secondary" className={`
-                                        ${job.status === 'Interview' ? 'bg-amber-100 text-amber-700' : ''}
-                                        ${job.status === 'Applied' ? 'bg-blue-100 text-blue-700' : ''}
-                                        ${job.status === 'Rejected' ? 'bg-slate-100 text-slate-500' : ''}
-                                    `}>
-                        {job.status}
-                      </Badge>
-                      <span className="text-xs text-slate-400">{job.date}</span>
-                    </div>
-                  </div>
-                ))}
-              </div>
-            </CardContent>
-          </Card>
 
-          <Card className="border-none shadow-sm bg-indigo-900 text-white overflow-hidden relative">
-            <div className="absolute top-0 right-0 w-40 h-40 bg-indigo-500/30 rounded-full blur-3xl -translate-y-1/2 translate-x-1/2 pointer-events-none" />
-            <CardContent className="p-6 relative z-10 flex flex-col justify-between h-full">
-              <div>
-                <h3 className="font-bold text-lg mb-2">Unlock Premium</h3>
-                <p className="text-indigo-200 text-sm mb-6">Get unlimited AI resume scans, cover letter generation, and priority job matching.</p>
-              </div>
-              <Button className="w-full bg-white text-indigo-900 hover:bg-indigo-50 font-bold">
-                Upgrade Now
-              </Button>
-            </CardContent>
-          </Card>
-        </div>
+        {/* Application Tracker (Real-time) */}
+        <ApplicationsTracker />
 
       </main>
     </div>
@@ -386,6 +377,88 @@ function DashboardError() {
         <h2 className="text-xl font-bold text-slate-900">Analysis Failed</h2>
         <Link href="/"><Button>Try Again</Button></Link>
       </div>
+    </div>
+  );
+}
+
+function ApplicationsTracker() {
+  const { data: applications } = useQuery({
+    queryKey: ['applications'],
+    queryFn: async () => {
+      const res = await fetch('/api/applications?userId=1'); // Default demo user
+      if (!res.ok) throw new Error('Failed to fetch applications');
+      return res.json();
+    },
+    refetchInterval: 5000, // Poll every 5 seconds for "real-time" updates
+  });
+
+  return (
+    <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+      <Card className="col-span-1 lg:col-span-2 border-none shadow-sm bg-white">
+        <CardHeader className="flex flex-row items-center justify-between pb-2">
+          <CardTitle className="text-lg font-bold text-slate-900 flex items-center gap-2">
+            Recent Applications
+            {/* Live Indicator */}
+            <span className="relative flex h-2 w-2">
+              <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-75"></span>
+              <span className="relative inline-flex rounded-full h-2 w-2 bg-emerald-500"></span>
+            </span>
+          </CardTitle>
+          <Button variant="outline" size="sm" className="h-8 text-xs">View All</Button>
+        </CardHeader>
+        <CardContent>
+          <div className="space-y-4">
+            {applications?.length === 0 && (
+              <p className="text-sm text-slate-500 text-center py-4">No applications yet. Start applying!</p>
+            )}
+
+            {applications?.map((job: any, i: number) => (
+              <motion.div
+                key={job.id}
+                initial={{ opacity: 0, x: -10 }}
+                animate={{ opacity: 1, x: 0 }}
+                className="flex items-center justify-between p-3 rounded-lg hover:bg-slate-50 transition-colors border border-transparent hover:border-slate-100 group"
+              >
+                <div className="flex items-center gap-3">
+                  <div className="w-10 h-10 rounded-lg bg-indigo-50 text-indigo-600 flex items-center justify-center font-bold text-lg">
+                    {job.company[0]}
+                  </div>
+                  <div>
+                    <h4 className="font-bold text-slate-900 text-sm">{job.role}</h4>
+                    <p className="text-xs text-slate-500">{job.company}</p>
+                  </div>
+                </div>
+                <div className="flex items-center gap-3">
+                  <Badge variant="secondary" className={`
+                                    ${job.status === 'Interview' ? 'bg-amber-100 text-amber-700' : ''}
+                                    ${job.status === 'Applied' ? 'bg-blue-100 text-blue-700' : ''}
+                                    ${job.status === 'Rejected' ? 'bg-slate-100 text-slate-500' : ''}
+                                    ${job.status === 'Offer' ? 'bg-emerald-100 text-emerald-700' : ''}
+                                `}>
+                    {job.status}
+                  </Badge>
+                  <span className="text-xs text-slate-400">
+                    {new Date(job.date).toLocaleDateString()}
+                  </span>
+                </div>
+              </motion.div>
+            ))}
+          </div>
+        </CardContent>
+      </Card>
+
+      <Card className="border-none shadow-sm bg-indigo-900 text-white overflow-hidden relative">
+        <div className="absolute top-0 right-0 w-40 h-40 bg-indigo-500/30 rounded-full blur-3xl -translate-y-1/2 translate-x-1/2 pointer-events-none" />
+        <CardContent className="p-6 relative z-10 flex flex-col justify-between h-full">
+          <div>
+            <h3 className="font-bold text-lg mb-2">Unlock Premium</h3>
+            <p className="text-indigo-200 text-sm mb-6">Get unlimited AI resume scans, cover letter generation, and priority job matching.</p>
+          </div>
+          <Button className="w-full bg-white text-indigo-900 hover:bg-indigo-50 font-bold">
+            Upgrade Now
+          </Button>
+        </CardContent>
+      </Card>
     </div>
   );
 }

@@ -39,6 +39,10 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         },
         onSuccess: (user: SelectUser) => {
             queryClient.setQueryData(["/api/user"], user);
+            toast({
+                title: "Welcome back!",
+                description: "Successfully logged in.",
+            });
         },
         onError: (error: Error) => {
             toast({
@@ -56,6 +60,10 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         },
         onSuccess: (user: SelectUser) => {
             queryClient.setQueryData(["/api/user"], user);
+            toast({
+                title: "Account created",
+                description: "Welcome to Polaris!",
+            });
         },
         onError: (error: Error) => {
             toast({
@@ -72,6 +80,10 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         },
         onSuccess: () => {
             queryClient.setQueryData(["/api/user"], null);
+            toast({
+                title: "Logged out",
+                description: "See you next time!",
+            });
         },
         onError: (error: Error) => {
             toast({

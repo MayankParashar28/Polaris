@@ -42,13 +42,13 @@ export function setupAuth(app: Express) {
     },
   };
 
-  if (process.env.DATABASE_URL && pool) {
-    const pgSession = connectPg(session);
-    sessionSettings.store = new pgSession({
-      pool,
-      createTableIfMissing: true,
-    });
-  }
+  // if (process.env.DATABASE_URL && pool) {
+  //   const pgSession = connectPg(session);
+  //   sessionSettings.store = new pgSession({
+  //     pool,
+  //     createTableIfMissing: true,
+  //   });
+  // }
 
   app.use(session(sessionSettings));
 

@@ -81,7 +81,25 @@ export const portfolios = pgTable("portfolios", {
   createdAt: timestamp("created_at").defaultNow(),
 });
 
+
+export const applications = pgTable("applications", {
+  id: serial("id").primaryKey(),
+  userId: integer("user_id").notNull().references(() => users.id),
+  role: text("role").notNull(),
+  company: text("company").notNull(),
+  status: text("status").notNull().default("Applied"), // 'Applied', 'Interview', 'Offer', 'Rejected'
+  date: timestamp("date").defaultNow(),
+  notes: text("notes"),
+});
+
 // === RELATIONS ===
+
+export const applicationsRelations = relations(applications, ({ one }) => ({
+  user: one(users, {
+    fields: [applications.userId],
+    references: [users.id],
+  }),
+}));
 
 export const resumesRelations = relations(resumes, ({ one }) => ({
   analysisResult: one(analysisResults, {
@@ -129,6 +147,7 @@ export const portfoliosRelations = relations(portfolios, ({ one }) => ({
     fields: [portfolios.userId],
     references: [users.id],
   }),
+  // applications: many(applications) // Optional: link applications to portfolio if needed later
 }));
 
 // === BASE SCHEMAS ===
@@ -140,6 +159,7 @@ export const insertRoadmapItemSchema = createInsertSchema(roadmapItems).omit({ i
 export const insertInterviewSchema = createInsertSchema(interviews).omit({ id: true, createdAt: true });
 export const insertInterviewMessageSchema = createInsertSchema(interviewMessages).omit({ id: true, createdAt: true });
 export const insertPortfolioSchema = createInsertSchema(portfolios).omit({ id: true, createdAt: true });
+export const insertApplicationSchema = createInsertSchema(applications).omit({ id: true, date: true });
 
 // === EXPLICIT API CONTRACT TYPES ===
 
@@ -163,6 +183,9 @@ export type InsertInterviewMessage = z.infer<typeof insertInterviewMessageSchema
 
 export type Portfolio = typeof portfolios.$inferSelect;
 export type InsertPortfolio = z.infer<typeof insertPortfolioSchema>;
+
+export type Application = typeof applications.$inferSelect;
+export type InsertApplication = z.infer<typeof insertApplicationSchema>;
 
 export type CreateResumeRequest = {
   content: string;

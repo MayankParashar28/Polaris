@@ -156,7 +156,7 @@ function LoginForm({ onSubmit, isPending }: { onSubmit: (data: InsertUser) => vo
                         <FormItem className="space-y-2">
                             <FormLabel className="text-[10px] font-bold uppercase tracking-[0.2em] text-slate-400 ml-1">Identity ID</FormLabel>
                             <FormControl>
-                                <Input placeholder="ID: COMMANDER-01" {...field} className="h-14 bg-white border-slate-200 focus:border-primary/40 focus:ring-primary/10 transition-all text-slate-900 rounded-2xl shadow-sm" />
+                                <Input placeholder="commander-01" {...field} className="h-14 bg-white border-slate-200 focus:border-primary/40 focus:ring-primary/10 transition-all text-slate-900 rounded-2xl shadow-sm" />
                             </FormControl>
                             <FormMessage className="text-rose-500 text-xs font-bold" />
                         </FormItem>
@@ -202,7 +202,7 @@ function RegisterForm({ onSubmit, isPending }: { onSubmit: (data: InsertUser) =>
                         <FormItem className="space-y-2">
                             <FormLabel className="text-[10px] font-bold uppercase tracking-[0.2em] text-slate-400 ml-1">New Assignment ID</FormLabel>
                             <FormControl>
-                                <Input placeholder="ID: AGENT-X" {...field} className="h-14 bg-white border-slate-200 focus:border-primary/40 focus:ring-primary/10 transition-all text-slate-900 rounded-2xl shadow-sm" />
+                                <Input placeholder="agent-x" {...field} className="h-14 bg-white border-slate-200 focus:border-primary/40 focus:ring-primary/10 transition-all text-slate-900 rounded-2xl shadow-sm" />
                             </FormControl>
                             <FormMessage className="text-rose-500 text-xs font-bold" />
                         </FormItem>

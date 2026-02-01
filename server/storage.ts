@@ -21,6 +21,9 @@ import {
   portfolios,
   type Portfolio,
   type InsertPortfolio,
+  applications,
+  type Application,
+  type InsertApplication,
 } from "@shared/schema";
 import { eq, desc } from "drizzle-orm";
 
@@ -38,7 +41,6 @@ export interface IStorage {
 
   createRoadmapItems(items: InsertRoadmapItem[]): Promise<RoadmapItem[]>;
   getRoadmapItemsByAnalysisId(analysisId: number): Promise<RoadmapItem[]>;
-  getRoadmapItemsByAnalysisId(analysisId: number): Promise<RoadmapItem[]>;
   updateRoadmapItemStatus(id: number, status: string): Promise<RoadmapItem | undefined>;
 
   createInterview(interview: InsertInterview): Promise<Interview>;
@@ -48,6 +50,9 @@ export interface IStorage {
 
   createPortfolio(portfolio: InsertPortfolio): Promise<Portfolio>;
   getPortfolioByUserId(userId: number): Promise<Portfolio | undefined>;
+
+  createApplication(application: InsertApplication): Promise<Application>;
+  getApplications(userId: number): Promise<Application[]>;
 }
 
 export class DatabaseStorage implements IStorage {
@@ -165,6 +170,17 @@ export class DatabaseStorage implements IStorage {
     const [portfolio] = await db.select().from(portfolios).where(eq(portfolios.userId, userId));
     return portfolio;
   }
+
+  async createApplication(application: InsertApplication): Promise<Application> {
+    if (!db) throw new Error("Database not initialized");
+    const [newApp] = await db.insert(applications).values(application).returning();
+    return newApp;
+  }
+
+  async getApplications(userId: number): Promise<Application[]> {
+    if (!db) throw new Error("Database not initialized");
+    return await db.select().from(applications).where(eq(applications.userId, userId)).orderBy(desc(applications.date));
+  }
 }
 
 // Strictly persistent storage for Career-Navigator Production-Ready Environment
@@ -176,6 +192,7 @@ export class MemStorage implements IStorage {
   private interviews: Map<number, Interview>;
   private interviewMessages: Map<number, InterviewMessage>;
   private portfolios: Map<number, Portfolio>;
+  private applications: Map<number, Application>;
   private currentId: { [key: string]: number };
 
   constructor() {
@@ -186,6 +203,7 @@ export class MemStorage implements IStorage {
     this.interviews = new Map();
     this.interviewMessages = new Map();
     this.portfolios = new Map();
+    this.applications = new Map();
     this.currentId = {
       users: 1,
       resumes: 1,
@@ -194,6 +212,7 @@ export class MemStorage implements IStorage {
       interviews: 1,
       interviewMessages: 1,
       portfolios: 1,
+      applications: 1,
     };
   }
 
@@ -335,6 +354,25 @@ export class MemStorage implements IStorage {
     return Array.from(this.portfolios.values()).find(
       (p) => p.userId === userId,
     );
+  }
+
+  async createApplication(application: InsertApplication): Promise<Application> {
+    const id = this.currentId.applications++;
+    const newApp: Application = {
+      ...application,
+      id,
+      date: new Date(),
+      status: application.status ?? "Applied",
+      notes: application.notes ?? null
+    };
+    this.applications.set(id, newApp);
+    return newApp;
+  }
+
+  async getApplications(userId: number): Promise<Application[]> {
+    return Array.from(this.applications.values())
+      .filter((app) => app.userId === userId)
+      .sort((a, b) => (b.date?.getTime() ?? 0) - (a.date?.getTime() ?? 0));
   }
 }
 
