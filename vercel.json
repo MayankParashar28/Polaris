@@ -5,8 +5,8 @@
             "destination": "/api/index.js"
         },
         {
-            "source": "/(.*)",
-            "destination": "/api/index.js"
+            "source": "/((?!api/|assets/|favicon.png|manifest.json).*)",
+            "destination": "/index.html"
         }
     ]
 }
