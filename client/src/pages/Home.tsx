@@ -97,7 +97,7 @@ export default function Home() {
     setFileName(file.name);
     setSelectedFile(file);
     setIsReadingFile(true);
-    console.log("File selected:", file.name, file.type, file.size);
+
 
     if (file.size === 0) {
       toast({ variant: "destructive", title: "Empty File", description: "The selected file is empty." });
@@ -106,25 +106,25 @@ export default function Home() {
     }
 
     try {
-      console.log("Starting file reading...");
+
       let text = "";
       if (file.type === "application/pdf") {
-        console.log("File is PDF. Loading PDFJS...");
+
         const arrayBuffer = await file.arrayBuffer();
-        console.log("ArrayBuffer loaded. Size:", arrayBuffer.byteLength);
+
 
         try {
           const pdf = await pdfjsLib.getDocument({ data: arrayBuffer }).promise;
-          console.log("PDF Document loaded. Pages:", pdf.numPages);
+
 
           for (let i = 1; i <= pdf.numPages; i++) {
-            console.log(`Parsing page ${i}...`);
+
             const page = await pdf.getPage(i);
             const textContent = await page.getTextContent();
             const pageText = textContent.items.map((item: any) => item.str).join(" ");
             text += pageText + "\n";
           }
-          console.log("PDF Parsing complete. Text length:", text.length);
+
         } catch (pdfErr) {
           console.error("PDF Parsing Inner Error:", pdfErr);
           throw pdfErr;
@@ -135,7 +135,7 @@ export default function Home() {
 
       // Handle case where text extraction failed but file exists
       if (text.length < 10) {
-        console.warn("Text extraction returned empty/short string. Proceeding with file upload for Multimodal Analysis.");
+
         text = ""; // Ensure it's not a garbage 1-char string
       }
 
@@ -144,10 +144,10 @@ export default function Home() {
       // Auto-Scan Logic
       // Only scan if we have text. If not, user enters role manually.
       if (text.length > 50) {
-        console.log("Triggering Scan Mutation...");
+
         scanMutation.mutate(text);
       } else {
-        console.log("Skipping auto-scan (content too short). User must enter role.");
+
         // We do typically require content to be present for the submit button to work?
         // Let's check handleSubmit.
         // It checks: if (!content.trim() || !targetRole.trim()) return;

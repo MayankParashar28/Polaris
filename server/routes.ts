@@ -38,8 +38,7 @@ async function generateContentWithFallback(prompt: string, jsonMode = true, inli
   for (const client of clients) {
     for (const modelName of models) {
       try {
-        console.log(`Attempting with model: ${modelName} on ${client === genAIPrimary ? 'Primary' : 'Secondary'} Key`);
-        console.log(`Payload: Prompt length ${prompt.length}, Attachment: ${inlineData ? 'Yes (' + inlineData.mimeType + ')' : 'No'}`);
+
 
         const model = client!.getGenerativeModel({ model: modelName });
 
