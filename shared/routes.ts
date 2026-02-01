@@ -1,5 +1,5 @@
 import { z } from 'zod';
-import { insertResumeSchema, analysisResults, roadmapItems, resumes } from './schema';
+import { insertResumeSchema, analysisResults, roadmapItems, resumes, interviews, interviewMessages } from './schema';
 
 // ============================================
 // SHARED ERROR SCHEMAS
@@ -43,8 +43,23 @@ export const api = {
       method: 'GET' as const,
       path: '/api/resumes/:id/analysis',
       responses: {
-        200: z.custom<typeof analysisResults.$inferSelect & { roadmap: typeof roadmapItems.$inferSelect[] }>(),
+        200: z.custom<typeof analysisResults.$inferSelect & { roadmap: typeof roadmapItems.$inferSelect[], resume: typeof resumes.$inferSelect }>(),
         404: errorSchemas.notFound,
+      },
+    },
+    scan: {
+      method: 'POST' as const,
+      path: '/api/resumes/scan',
+      input: z.object({
+        content: z.string(),
+      }),
+      responses: {
+        200: z.object({
+          candidateName: z.string().optional(),
+          suggestedRole: z.string().optional(),
+          skills: z.array(z.string()),
+        }),
+        500: errorSchemas.internal,
       },
     },
   },
@@ -60,6 +75,39 @@ export const api = {
         404: errorSchemas.notFound,
       },
     },
+  },
+  interviews: {
+    create: {
+      method: 'POST' as const,
+      path: '/api/interviews',
+      input: z.object({
+        resumeId: z.number(),
+        userId: z.number(),
+      }),
+      responses: {
+        201: z.custom<typeof interviews.$inferSelect>(),
+        500: errorSchemas.internal,
+      },
+    },
+    get: {
+      method: 'GET' as const,
+      path: '/api/interviews/:id',
+      responses: {
+        200: z.custom<typeof interviews.$inferSelect & { messages: typeof interviewMessages.$inferSelect[] }>(),
+        404: errorSchemas.notFound,
+      },
+    },
+    addMessage: {
+      method: 'POST' as const,
+      path: '/api/interviews/:id/messages',
+      input: z.object({
+        content: z.string(),
+      }),
+      responses: {
+        201: z.custom<typeof interviewMessages.$inferSelect>(),
+        500: errorSchemas.internal,
+      },
+    }
   },
 };
 

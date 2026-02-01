@@ -25,9 +25,20 @@ export const resumes = pgTable("resumes", {
 export const analysisResults = pgTable("analysis_results", {
   id: serial("id").primaryKey(),
   resumeId: integer("resume_id").notNull().references(() => resumes.id),
-  readinessScore: integer("readiness_score").notNull(), // 0-100
-  strengths: jsonb("strengths").$type<string[]>().notNull(),
-  gaps: jsonb("gaps").$type<string[]>().notNull(),
+  readinessScore: integer("readiness_score").notNull(),
+  atsScore: integer("ats_score").notNull(),
+  // New granular scores
+  resumeQuality: integer("resume_quality").default(0),
+  skillMatch: integer("skill_match").default(0),
+  projectStrength: integer("project_strength").default(0),
+  interviewReadiness: integer("interview_readiness").default(0),
+  // Flexible AI Data
+  feedback: text("feedback").default(""),
+  analysisData: jsonb("analysis_data").default({}),
+  rewrittenContent: text("rewritten_content").notNull(),
+  strengths: text("strengths").array().notNull(),
+  gaps: text("gaps").array().notNull(),
+  // [FUTURE] embedding: vector("embedding", { dimensions: 1536 }), 
   createdAt: timestamp("created_at").defaultNow(),
 });
 
@@ -39,6 +50,34 @@ export const roadmapItems = pgTable("roadmap_items", {
   category: text("category").notNull(), // 'skill', 'project', 'practice', 'interview'
   status: text("status").notNull().default("pending"), // 'pending', 'in_progress', 'completed'
   order: integer("order").notNull(),
+  createdAt: timestamp("created_at").defaultNow(),
+});
+
+export const interviews = pgTable("interviews", {
+  id: serial("id").primaryKey(),
+  resumeId: integer("resume_id").notNull().references(() => resumes.id),
+  userId: integer("user_id").notNull().references(() => users.id),
+  score: integer("score"),
+  feedback: text("feedback"),
+  createdAt: timestamp("created_at").defaultNow(),
+});
+
+export const interviewMessages = pgTable("interview_messages", {
+  id: serial("id").primaryKey(),
+  interviewId: integer("interview_id").notNull().references(() => interviews.id),
+  role: text("role").notNull(), // 'user' or 'ai'
+  content: text("content").notNull(),
+  createdAt: timestamp("created_at").defaultNow(),
+});
+
+export const portfolios = pgTable("portfolios", {
+  id: serial("id").primaryKey(),
+  userId: integer("user_id").notNull().references(() => users.id),
+  domain: text("domain").notNull().unique(), // e.g., "mayank" -> mayank.career-nav.com
+  bio: text("bio"),
+  projects: jsonb("projects").default([]), // Array of { title, desc, link, techStack }
+  theme: text("theme").default("minimal"), // 'minimal', 'glass', 'brutalist'
+  isPublic: boolean("is_public").default(false),
   createdAt: timestamp("created_at").defaultNow(),
 });
 
@@ -66,12 +105,41 @@ export const roadmapItemsRelations = relations(roadmapItems, ({ one }) => ({
   }),
 }));
 
+export const interviewsRelations = relations(interviews, ({ one, many }) => ({
+  resume: one(resumes, {
+    fields: [interviews.resumeId],
+    references: [resumes.id],
+  }),
+  user: one(users, {
+    fields: [interviews.userId],
+    references: [users.id],
+  }),
+  messages: many(interviewMessages),
+}));
+
+export const interviewMessagesRelations = relations(interviewMessages, ({ one }) => ({
+  interview: one(interviews, {
+    fields: [interviewMessages.interviewId],
+    references: [interviews.id],
+  }),
+}));
+
+export const portfoliosRelations = relations(portfolios, ({ one }) => ({
+  user: one(users, {
+    fields: [portfolios.userId],
+    references: [users.id],
+  }),
+}));
+
 // === BASE SCHEMAS ===
 
 export const insertUserSchema = createInsertSchema(users).omit({ id: true });
 export const insertResumeSchema = createInsertSchema(resumes).omit({ id: true, createdAt: true });
 export const insertAnalysisSchema = createInsertSchema(analysisResults).omit({ id: true, createdAt: true });
 export const insertRoadmapItemSchema = createInsertSchema(roadmapItems).omit({ id: true, createdAt: true });
+export const insertInterviewSchema = createInsertSchema(interviews).omit({ id: true, createdAt: true });
+export const insertInterviewMessageSchema = createInsertSchema(interviewMessages).omit({ id: true, createdAt: true });
+export const insertPortfolioSchema = createInsertSchema(portfolios).omit({ id: true, createdAt: true });
 
 // === EXPLICIT API CONTRACT TYPES ===
 
@@ -86,6 +154,15 @@ export type InsertAnalysisResult = z.infer<typeof insertAnalysisSchema>;
 
 export type RoadmapItem = typeof roadmapItems.$inferSelect;
 export type InsertRoadmapItem = z.infer<typeof insertRoadmapItemSchema>;
+
+export type Interview = typeof interviews.$inferSelect;
+export type InsertInterview = z.infer<typeof insertInterviewSchema>;
+
+export type InterviewMessage = typeof interviewMessages.$inferSelect;
+export type InsertInterviewMessage = z.infer<typeof insertInterviewMessageSchema>;
+
+export type Portfolio = typeof portfolios.$inferSelect;
+export type InsertPortfolio = z.infer<typeof insertPortfolioSchema>;
 
 export type CreateResumeRequest = {
   content: string;
